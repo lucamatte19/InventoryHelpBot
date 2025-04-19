@@ -112,6 +112,7 @@ async def handle_forno_mention(update: Update, context: ContextTypes.DEFAULT_TYP
         if "forno" not in user_stats[user.id]:
             user_stats[user.id]["forno"] = {"today": 0, "total": 0}
         user_stats[user.id]["forno"]["today"] = user_stats[user.id]["forno"].get("today", 0) + 1
+        user_stats[user.id]["forno"]["total"] = user_stats[user.id]["forno"].get("total", 0) + 1
 
         # Verifica se l'utente vuole ricevere notifiche
         notifications_enabled = get_notification_status(user.id, "forno")

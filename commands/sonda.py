@@ -112,6 +112,7 @@ async def handle_sonda_mention(update: Update, context: ContextTypes.DEFAULT_TYP
         if "sonda" not in user_stats[user.id]:
             user_stats[user.id]["sonda"] = {"today": 0, "total": 0}
         user_stats[user.id]["sonda"]["today"] = user_stats[user.id]["sonda"].get("today", 0) + 1
+        user_stats[user.id]["sonda"]["total"] = user_stats[user.id]["sonda"].get("total", 0) + 1
 
         # Verifica se l'utente vuole ricevere notifiche
         notifications_enabled = get_notification_status(user.id, "sonda")

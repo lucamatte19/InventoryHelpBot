@@ -9,6 +9,7 @@ from utils.timer_data import (
     TIMER_DATA, user_stats, registered_users, ADMIN_USERNAME,
     daily_stats, daily_stats_subscribers, config, config_path
 )
+from utils.stats_manager import toggle_admin_stats_notification, should_send_admin_stats
 
 async def is_admin(update: Update) -> bool:
     """Verifica se l'utente è un amministratore."""
@@ -21,29 +22,51 @@ async def is_admin(update: Update) -> bool:
     return is_admin_user
 
 async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Mostra statistiche globali del bot."""
-    if not await is_admin(update):
+    """Mostra le statistiche di utilizzo dei comandi (per admin)."""
+    user = update.effective_user
+    if user.username != ADMIN_USERNAME:
+        await update.message.reply_text("⛔️ Questo comando è riservato all'amministratore.")
         return
     
-    current_time = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    # Carica le statistiche globali dal file
+    from utils.stats_manager import load_global_stats
+    stats = load_global_stats()
     
-    response_lines = [
-        "📊 *Statistiche Globali del Bot* 📊",
-        f"📅 *Data*: {current_time}",
-        f"👥 *Utenti registrati*: {len(registered_users)}",
-        f"🔔 *Abbonati alle notifiche giornaliere*: {len(daily_stats_subscribers)}",
-        "\n*Utilizzi Giornalieri:*"
-    ]
+    reply_text = "📊 *Statistiche Globali del Bot* 📊\n\n"
     
-    # Mostra statistiche di utilizzo per ogni comando
-    for command, count in daily_stats.items():
-        if command != "unique_users":  # Salta il contatore utenti unici nella visualizzazione
-            emoji = TIMER_DATA.get(command, {}).get("emoji", "📝")
-            response_lines.append(f"{emoji} *{command.capitalize()}*: {count}")
+    # Statistiche giornaliere
+    reply_text += "*Utilizzi Oggi:*\n"
+    for cmd, count in daily_stats.items():
+        if cmd != "unique_users":
+            emoji = TIMER_DATA[cmd]["emoji"] if cmd in TIMER_DATA else "📈"
+            reply_text += f"{emoji} {cmd.capitalize()}: {count}\n"
+    reply_text += f"👥 Utenti unici oggi: {len(daily_stats['unique_users'])}\n\n"
     
-    response_lines.append(f"\n👤 *Utenti unici oggi*: {len(daily_stats.get('unique_users', set()))}")
+    # Statistiche totali da file
+    reply_text += "*Utilizzi Totali (persistenti):*\n"
+    for cmd, count in stats["total"].items():
+        if cmd != "unique_users":
+            emoji = TIMER_DATA[cmd]["emoji"] if cmd in TIMER_DATA else "📈"
+            reply_text += f"{emoji} {cmd.capitalize()}: {count}\n"
     
-    await update.message.reply_text("\n".join(response_lines), parse_mode="Markdown")
+    # Stato impostazioni
+    reply_text += "\n*Impostazioni Admin:*\n"
+    status = "✅ Attivo" if should_send_admin_stats() else "❌ Disattivato"
+    reply_text += f"📧 Ricezione stats giornaliere: {status}\n"
+    reply_text += "Usa /toggle_stats per cambiare questa impostazione"
+    
+    await update.message.reply_text(reply_text, parse_mode="Markdown")
+
+async def toggle_admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Attiva/disattiva le notifiche statistiche giornaliere per l'admin."""
+    user = update.effective_user
+    if user.username != ADMIN_USERNAME:
+        await update.message.reply_text("⛔️ Questo comando è riservato all'amministratore.")
+        return
+    
+    enabled = toggle_admin_stats_notification()
+    status = "attivate ✅" if enabled else "disattivate ❌"
+    await update.message.reply_text(f"📊 Notifiche statistiche giornaliere {status}")
 
 async def admin_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Elenca tutti gli utenti registrati."""
@@ -449,6 +472,7 @@ def register_admin_handlers(app):
     from telegram.ext import CommandHandler
     
     app.add_handler(CommandHandler("admin_stats", admin_stats))
+    app.add_handler(CommandHandler("toggle_stats", toggle_admin_stats))
     app.add_handler(CommandHandler("admin_users", admin_users))
     app.add_handler(CommandHandler("admin_user_info", admin_user_info))
     app.add_handler(CommandHandler("admin_reset", admin_reset_timer))

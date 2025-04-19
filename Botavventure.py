@@ -26,6 +26,7 @@ from utils.player_data import (
     migrate_existing_data, get_all_subscribes_users,
     load_player_data, reset_daily_stats
 )
+from utils.stats_manager import should_send_admin_stats
 
 # Importa i comandi
 from commands.avventura import (
@@ -104,12 +105,32 @@ async def timer_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Funzione per inviare le statistiche giornaliere
 async def send_daily_stats(context: ContextTypes.DEFAULT_TYPE):
+    """Invia le statistiche giornaliere all'admin se l'opzione è attivata."""
+    if not should_send_admin_stats():
+        print("Invio statistiche giornaliere disattivato nelle preferenze admin")
+        return
+    
     if 'stats' not in config or 'recipient_chat_id' not in config['stats']:
         print("Nessun destinatario impostato per le statistiche")
         return
     
-    # ... Implementazione delle statistiche giornaliere ...
-    # ...existing code...
+    chat_id = config['stats']['recipient_chat_id']
+    
+    stats_message = "📊 *Riepilogo Statistiche Giornaliere* 📊\n\n"
+    
+    for cmd, count in daily_stats.items():
+        if cmd != "unique_users":
+            emoji = TIMER_DATA[cmd]["emoji"] if cmd in TIMER_DATA else "📈"
+            stats_message += f"{emoji} {cmd.capitalize()}: {count}\n"
+    
+    stats_message += f"\n👥 Utenti unici oggi: {len(daily_stats['unique_users'])}"
+    
+    await context.bot.send_message(
+        chat_id=chat_id,
+        text=stats_message,
+        parse_mode="Markdown"
+    )
+    print(f"Statistiche giornaliere inviate a {chat_id}")
 
 # Comando start
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):

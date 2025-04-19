@@ -108,6 +108,7 @@ async def handle_avventura_mention(update: Update, context: ContextTypes.DEFAULT
         if "avventura" not in user_stats[user.id]:
             user_stats[user.id]["avventura"] = {"today": 0, "total": 0}
         user_stats[user.id]["avventura"]["today"] = user_stats[user.id]["avventura"].get("today", 0) + 1
+        user_stats[user.id]["avventura"]["total"] = user_stats[user.id]["avventura"].get("total", 0) + 1
 
         time_unit = format_remaining_time(max_cooldown_seconds)
         print(f"[{item_name}] Starting standard {time_unit} adventure.")

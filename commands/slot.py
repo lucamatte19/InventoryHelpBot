@@ -127,6 +127,7 @@ async def handle_slot_mention(update: Update, context: ContextTypes.DEFAULT_TYPE
         if "slot" not in user_stats[user.id]:
             user_stats[user.id]["slot"] = {"today": 0, "total": 0}
         user_stats[user.id]["slot"]["today"] = user_stats[user.id]["slot"].get("today", 0) + 1
+        user_stats[user.id]["slot"]["total"] = user_stats[user.id]["slot"].get("total", 0) + 1
 
         # Verifica se l'utente vuole ricevere notifiche
         notifications_enabled = get_notification_status(user.id, "slot")

@@ -112,6 +112,7 @@ async def handle_gica_mention(update: Update, context: ContextTypes.DEFAULT_TYPE
         if "gica" not in user_stats[user.id]:
             user_stats[user.id]["gica"] = {"today": 0, "total": 0}
         user_stats[user.id]["gica"]["today"] = user_stats[user.id]["gica"].get("today", 0) + 1
+        user_stats[user.id]["gica"]["total"] = user_stats[user.id]["gica"].get("total", 0) + 1
 
         # Verifica se l'utente vuole ricevere notifiche
         notifications_enabled = get_notification_status(user.id, "gica")

@@ -112,6 +112,7 @@ async def handle_nanoc_mention(update: Update, context: ContextTypes.DEFAULT_TYP
         if "nanoc" not in user_stats[user.id]:
             user_stats[user.id]["nanoc"] = {"today": 0, "total": 0}
         user_stats[user.id]["nanoc"]["today"] = user_stats[user.id]["nanoc"].get("today", 0) + 1
+        user_stats[user.id]["nanoc"]["total"] = user_stats[user.id]["nanoc"].get("total", 0) + 1
 
         # Verifica se l'utente vuole ricevere notifiche
         notifications_enabled = get_notification_status(user.id, "nanoc")

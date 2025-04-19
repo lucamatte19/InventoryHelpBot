@@ -19,7 +19,7 @@ async def check_cooldown_borsellino(user_id: int) -> bool:
 
 async def handle_borsellino_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(f"[Borsellino] Received: '{update.message.text}'")
-    regex_pattern = r'^/usa\s+(?:borsellino|borse|bors|sell|sellino|sel)(?:@InventoryBot)?(?:\s+(\d+(?::\d+)+))?$'
+    regex_pattern = r'^/usa\s+(?:borsellino|borse|bors|sel|sell|sellino)(?:@InventoryBot)?(?:\s+(\d+(?::\d+)+))?$'
     match = re.match(regex_pattern, update.message.text)
 
     if not match:
@@ -119,6 +119,7 @@ async def handle_borsellino_mention(update: Update, context: ContextTypes.DEFAUL
         if "borsellino" not in user_stats[user.id]:
             user_stats[user.id]["borsellino"] = {"today": 0, "total": 0}
         user_stats[user.id]["borsellino"]["today"] = user_stats[user.id]["borsellino"].get("today", 0) + 1
+        user_stats[user.id]["borsellino"]["total"] = user_stats[user.id]["borsellino"].get("total", 0) + 1
 
         # Verifica se l'utente vuole ricevere notifiche
         notifications_enabled = get_notification_status(user.id, "borsellino")
