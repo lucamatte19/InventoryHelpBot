@@ -100,16 +100,20 @@ def load_player_data(user_id):
     
     return player_cache[user_id]
 
-def save_player_data(user_id):
+def save_player_data(user_id, data=None):
     """Salva i dati di un giocatore nel file."""
-    if user_id not in player_cache:
-        return False
+    if data is None:
+        if user_id not in player_cache:
+            return False
+        data = player_cache[user_id]
+    else:
+        player_cache[user_id] = data  # Aggiorna la cache con i dati forniti
     
     file_path = get_player_file_path(user_id)
     
     try:
         with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(player_cache[user_id], f, indent=2)
+            json.dump(data, f, indent=2)
         return True
     except Exception as e:
         print(f"Errore nel salvataggio dei dati per l'utente {user_id}: {e}")
@@ -137,7 +141,11 @@ def update_player_stats(user_id, command_name):
         data["stats"][command_name]["today"] = data["stats"][command_name].get("today", 0) + 1
         data["stats"][command_name]["total"] = data["stats"][command_name].get("total", 0) + 1
         
-        save_player_data(user_id, data)
+        # Verifica che total sia sempre >= today
+        if data["stats"][command_name]["total"] < data["stats"][command_name]["today"]:
+            data["stats"][command_name]["total"] = data["stats"][command_name]["today"]
+        
+        save_player_data(user_id)
         return True
     except Exception as e:
         print(f"Errore nell'aggiornamento delle statistiche per l'utente {user_id}: {e}")
@@ -178,7 +186,7 @@ def reset_daily_stats():
     
     # Prima di resettare, salva le statistiche giornaliere nel file persistente
     from utils.stats_manager import update_global_stats
-    from utils.timer_data import daily_stats
+    from utils.timer_data import daily_stats, registered_users
     
     # Aggiorna il file delle statistiche globali
     update_global_stats(daily_stats)
@@ -191,13 +199,21 @@ def reset_daily_stats():
             daily_stats[key] = 0
     
     # Resetta anche i contatori giornalieri nei dati utente
-    for user_id in daily_stats_subscribers:
-        data = load_player_data(user_id)
-        if "stats" in data:
-            for cmd in data["stats"]:
-                if "today" in data["stats"][cmd]:
-                    data["stats"][cmd]["today"] = 0
-            save_player_data(user_id, data)
+    for user_id in registered_users:
+        try:
+            data = load_player_data(user_id)
+            if "stats" in data:
+                for cmd in data["stats"]:
+                    if "today" in data["stats"][cmd]:
+                        data["stats"][cmd]["today"] = 0
+                    # Assicuriamoci che total sia sempre maggiore o uguale a today
+                    if "total" in data["stats"][cmd] and data["stats"][cmd].get("today", 0) > data["stats"][cmd].get("total", 0):
+                        data["stats"][cmd]["total"] = data["stats"][cmd]["today"]
+                save_player_data(user_id)
+        except Exception as e:
+            print(f"Errore nel reset delle statistiche per l'utente {user_id}: {e}")
+    
+    print("Daily stats reset complete")
 
 def get_all_subscribes_users():
     """Ottiene tutti gli utenti iscritti alle statistiche giornaliere."""

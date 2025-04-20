@@ -1,4 +1,5 @@
 import asyncio
+import telegram  # Aggiunto import per gestire le eccezioni BadRequest
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, CallbackQueryHandler
 import datetime

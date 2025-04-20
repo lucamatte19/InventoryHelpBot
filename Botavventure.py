@@ -28,6 +28,9 @@ from utils.player_data import (
 )
 from utils.stats_manager import should_send_admin_stats
 
+# Aggiungi l'import per il nuovo modulo di logging
+from utils.logger import logger, log_error
+
 # Importa i comandi
 from commands.avventura import (
     handle_avventura_mention, toggle_avventura
@@ -356,9 +359,9 @@ def main():
     midnight = datetime.datetime.combine(now.date() + datetime.timedelta(days=1), datetime.time())
     seconds_until_midnight = (midnight - now).total_seconds()
     
-    # Reset contatori giornalieri
+    # Reset contatori giornalieri - Meglio utilizzare una callback asincrona
     job_queue.run_daily(
-        lambda ctx: reset_daily_stats(),
+        lambda ctx: asyncio.create_task(reset_daily_stats_async(ctx)),
         time=datetime.time(0, 1),  # 00:01 per dare tempo al job delle statistiche di eseguire
     )
     
@@ -376,8 +379,69 @@ def main():
         first=seconds_until_midnight - 60  # 1 minuto prima delle statistiche globali
     )
 
+    # Gestione globale degli errori non gestiti
+    app.add_error_handler(error_handler)
+
     print("Bot starting polling...")
     app.run_polling()
 
+# Aggiungi questa funzione per gestire il reset in modo asincrono
+async def reset_daily_stats_async(context):
+    """Wrapper asincrono per reset_daily_stats"""
+    print("Avvio reset giornaliero statistiche...")
+    # Esegui il reset in un thread separato per non bloccare il loop principale
+    await asyncio.to_thread(reset_daily_stats)
+    print("Reset giornaliero completato con successo")
+
+# Gestore di errori
+async def error_handler(update, context):
+    """Gestisce gli errori generati durante l'esecuzione degli handler."""
+    try:
+        # Ottieni informazioni sull'errore
+        error = context.error
+        
+        # Informazioni sul contesto
+        ctx_info = {
+            "update_id": update.update_id if update else None,
+            "chat_id": update.effective_chat.id if update and update.effective_chat else None,
+            "user_id": update.effective_user.id if update and update.effective_user else None,
+            "message": update.effective_message.text if update and update.effective_message else None
+        }
+        
+        # Registra l'errore con il contesto
+        error_file = log_error(error, ctx_info)
+        
+        # Notifica l'admin dell'errore
+        if 'stats' in config and 'recipient_chat_id' in config['stats']:
+            admin_chat_id = config['stats']['recipient_chat_id']
+            error_message = (
+                f"⚠️ *Errore nel bot!*\n"
+                f"Tipo: `{type(error).__name__}`\n"
+                f"Messaggio: `{str(error)}`\n\n"
+                f"L'errore è stato registrato in: `{error_file}`"
+            )
+            await context.bot.send_message(
+                chat_id=admin_chat_id,
+                text=error_message,
+                parse_mode="Markdown"
+            )
+        
+        # Se c'è un messaggio associato all'errore, invia anche una risposta generica all'utente
+        if update and update.effective_message:
+            await update.effective_message.reply_text(
+                "Si è verificato un errore nell'elaborazione del comando. "
+                "L'amministratore è stato notificato."
+            )
+    
+    except Exception as e:
+        # Fallback in caso di errore nel gestore di errori
+        logger.error(f"Errore nel gestore di errori: {e}")
+        logger.error(traceback.format_exc())
+
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        # Registra gli errori all'avvio
+        log_error(e, "Errore durante l'avvio del bot")
+        raise

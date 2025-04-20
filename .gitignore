@@ -1,3 +1,51 @@
+# Configurazioni e dati sensibili
 config.ini
-players
-__pycache__
+*.env
+.env
+credentials.json
+*.key
+*.pem
+token.txt
+
+# Dati utente e database
+players/
+*.db
+*.sqlite
+*.sqlite3
+user_data/
+database/
+
+# Cache e file temporanei
+__pycache__/
+*.py[cod]
+*$py.class
+.cache/
+.pytest_cache/
+.coverage
+htmlcov/
+.temp/
+tmp/
+
+# Log
+*.log
+logs/
+error_logs/
+
+# Ambiente virtuale
+venv/
+env/
+.venv/
+.env/
+
+# File di sistema e IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+.history/
+
+# File di build e distribuzione
+dist/
+build/
+*.egg-info/

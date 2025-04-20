@@ -13,42 +13,73 @@ from utils.player_data import (
 )
 
 async def handle_utilizzi_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Mostra le statistiche di utilizzo personali dell'utente."""
+    """Mostra le statistiche di utilizzo personali dei comandi."""
     user = update.effective_user
-    user_id = user.id
-    username = user.username or f"utente_{user_id}"
+    username = user.username or f"utente_{user.id}"
     
-    # Aggiorna username se disponibile
-    if username != f"utente_{user_id}":
-        update_username(user_id, username)
+    # Carica i dati dell'utente
+    from utils.player_data import load_player_data
+    data = load_player_data(user.id)
     
-    # Ottieni le statistiche dell'utente dalla nuova struttura dati persistente
-    player_data = load_player_data(user_id)
-    stats = player_data["stats"]
+    if "stats" not in data:
+        await update.message.reply_text(f"@{username}, non hai ancora utilizzato alcun comando tracciato!")
+        return
     
-    response_lines = [f"📊 *Statistiche di utilizzo per @{username}* 📊"]
+    stats = data["stats"]
     
-    today = datetime.datetime.now().strftime("%d/%m/%Y")
-    response_lines.append(f"📅 *Data*: {today}")
+    # Verifica che i dati totali siano coerenti (totale >= giornaliero)
+    for cmd in stats:
+        if stats[cmd].get("total", 0) < stats[cmd].get("today", 0):
+            # Correggi il dato nel caso in cui il totale sia inferiore al giornaliero
+            stats[cmd]["total"] = stats[cmd]["today"]
     
-    # Statistiche per ogni comando supportato
-    for command in ["avventura", "slot", "borsellino", "nanoc", "nanor", "gica", "pozzo", "sonda", "forno"]:
-        emoji = TIMER_DATA[command]["emoji"]
-        count_today = stats.get(command, {}).get("today", 0)
-        count_total = stats.get(command, {}).get("total", 0)
-        response_lines.append(f"{emoji} *{command.capitalize()}*: {count_today} oggi, {count_total} totali")
+    # Componi il messaggio di risposta
+    reply_text = f"📊 *Statistiche di utilizzo per @{username}* 📊\n\n"
     
-    # Aggiungi info sul servizio di notifiche giornaliere
-    daily_stats_enabled = player_data["settings"].get("daily_stats", False)
-    if daily_stats_enabled:
-        response_lines.append("\n✅ *Notifiche giornaliere*: Attive")
-        response_lines.append("Riceverai un resoconto dei tuoi utilizzi ogni giorno a mezzanotte.")
-        response_lines.append("Usa /noutilizzi per disattivarle.")
-    else:
-        response_lines.append("\n❌ *Notifiche giornaliere*: Disattivate")
-        response_lines.append("Usa /siutilizzi per ricevere un resoconto dei tuoi utilizzi ogni giorno a mezzanotte.")
+    # Comandi avventura
+    reply_text += "*Avventura:*\n"
+    avventura_stats = stats.get("avventura", {"today": 0, "total": 0})
+    reply_text += f"🗡 Oggi: {avventura_stats.get('today', 0)} | Totale: {avventura_stats.get('total', 0)}\n\n"
     
-    await update.message.reply_text("\n".join(response_lines), parse_mode="Markdown")
+    # Comandi speciali (slot e borsellino)
+    reply_text += "*Comandi Speciali:*\n"
+    slot_stats = stats.get("slot", {"today": 0, "total": 0})
+    reply_text += f"🎰 Slot: {slot_stats.get('today', 0)} oggi | {slot_stats.get('total', 0)} totale\n"
+    
+    borsellino_stats = stats.get("borsellino", {"today": 0, "total": 0})
+    reply_text += f"💰 Borsellino: {borsellino_stats.get('today', 0)} oggi | {borsellino_stats.get('total', 0)} totale\n\n"
+    
+    # Comandi giornalieri
+    reply_text += "*Comandi Giornalieri:*\n"
+    
+    nanoc_stats = stats.get("nanoc", {"today": 0, "total": 0})
+    reply_text += f"🧪 NanoC: {nanoc_stats.get('today', 0)} oggi | {nanoc_stats.get('total', 0)} totale\n"
+    
+    nanor_stats = stats.get("nanor", {"today": 0, "total": 0})
+    reply_text += f"🔄 NanoR: {nanor_stats.get('today', 0)} oggi | {nanor_stats.get('total', 0)} totale\n"
+    
+    gica_stats = stats.get("gica", {"today": 0, "total": 0})
+    reply_text += f"🧙‍♂️ Gica: {gica_stats.get('today', 0)} oggi | {gica_stats.get('total', 0)} totale\n"
+    
+    pozzo_stats = stats.get("pozzo", {"today": 0, "total": 0})
+    reply_text += f"🚰 Pozzo: {pozzo_stats.get('today', 0)} oggi | {pozzo_stats.get('total', 0)} totale\n"
+    
+    compattatore_stats = stats.get("compattatore", {"today": 0, "total": 0})
+    reply_text += f"🗜️ Compattatore: {compattatore_stats.get('today', 0)} oggi | {compattatore_stats.get('total', 0)} totale\n\n"
+    
+    # Comandi settimanali
+    reply_text += "*Comandi Settimanali:*\n"
+    
+    sonda_stats = stats.get("sonda", {"today": 0, "total": 0})
+    reply_text += f"🔍 Sonda: {sonda_stats.get('today', 0)} oggi | {sonda_stats.get('total', 0)} totale\n"
+    
+    forno_stats = stats.get("forno", {"today": 0, "total": 0})
+    reply_text += f"🔥 Forno: {forno_stats.get('today', 0)} oggi | {forno_stats.get('total', 0)} totale\n\n"
+    
+    reply_text += "Usa /siutilizzi per ricevere automaticamente queste statistiche ogni giorno a mezzanotte."
+    
+    # Invia la risposta
+    await update.message.reply_text(reply_text, parse_mode="Markdown")
 
 async def toggle_utilizzi_notifications(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Attiva/disattiva le notifiche giornaliere degli utilizzi."""
