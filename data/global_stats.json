@@ -1,0 +1,27 @@
+{
+  "total": {
+    "avventura": 158,
+    "slot": 61,
+    "borsellino": 12,
+    "nanoc": 3,
+    "nanor": 0,
+    "gica": 3,
+    "pozzo": 0,
+    "sonda": 1,
+    "forno": 0,
+    "unique_users": 0
+  },
+  "daily": {
+    "avventura": 158,
+    "slot": 61,
+    "borsellino": 12,
+    "nanoc": 3,
+    "nanor": 0,
+    "gica": 3,
+    "pozzo": 0,
+    "sonda": 1,
+    "forno": 0,
+    "unique_users": 14
+  },
+  "last_reset": 1745107260
+}

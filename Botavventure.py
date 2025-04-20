@@ -19,7 +19,7 @@ from utils.timer_data import (
     daily_stats, TOKEN, registered_users, save_registered_users,
     user_stats, disabled_avventura, disabled_slot, disabled_borsellino,
     disabled_nanoc, disabled_nanor, disabled_gica, disabled_pozzo,
-    disabled_sonda, disabled_forno
+    disabled_sonda, disabled_forno, disabled_compattatore
 )
 from utils.formatters import format_remaining_time
 from utils.player_data import (
@@ -55,6 +55,9 @@ from commands.sonda import (
 )
 from commands.forno import (
     handle_forno_mention, toggle_forno
+)
+from commands.compattatore import (
+    handle_compattatore_mention, toggle_compattatore
 )
 from commands.utilizzi import (
     handle_utilizzi_command, toggle_utilizzi_notifications, send_daily_personal_stats
@@ -207,7 +210,8 @@ async def post_init(app: Application):
         "gica": disabled_gica,
         "pozzo": disabled_pozzo,
         "sonda": disabled_sonda,
-        "forno": disabled_forno
+        "forno": disabled_forno,
+        "compattatore": disabled_compattatore
     }
     
     # Questa funzione ora include anche sync_timers_from_files() e recreate_active_timers()
@@ -260,6 +264,9 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 `/usa pozzo` - Pozzo
 `/nopozzo` - Toggle notifiche
 
+`/usa compattatore` - Compattatore (cooldown: 24 ore)
+`/nocompattatore` - Toggle notifiche
+
 📆 *Oggetti Settimanali* (cooldown: 7 giorni)
 `/usa sonda` - Sonda
 `/nosonda` - Toggle notifiche
@@ -295,7 +302,7 @@ def main():
     app.add_handler(MessageHandler(filters.Regex(r'^/noslot(?:@InventoryBot)?$'), toggle_slot))
     
     # Registrazione degli handler per borsellino
-    app.add_handler(MessageHandler(filters.Regex(r'^/usa\s+(?:borsellino|borse|bors|sell|sellino)(?:@InventoryBot)?(?:\s+\d+(?::\d+)+)?$'), handle_borsellino_mention))
+    app.add_handler(MessageHandler(filters.Regex(r'^/usa\s+(?:borsellino|borse|bors|sel|sell|sellino)(?:@InventoryBot)?(?:\s+\d+(?::\d+)+)?$'), handle_borsellino_mention))
     app.add_handler(MessageHandler(filters.Regex(r'^/noborsellino(?:@InventoryBot)?$'), toggle_borsellino))
     
     # Registrazione degli handler per nanoc
@@ -321,6 +328,10 @@ def main():
     # Registrazione degli handler per forno
     app.add_handler(MessageHandler(filters.Regex(r'^/usa\s+forno(?:@InventoryBot)?(?:\s+\d+(?::\d+)+)?$'), handle_forno_mention))
     app.add_handler(MessageHandler(filters.Regex(r'^/noforno(?:@InventoryBot)?$'), toggle_forno))
+    
+    # Registrazione degli handler per compattatore
+    app.add_handler(MessageHandler(filters.Regex(r'^/usa\s+(?:compattatore|comp)(?:@InventoryBot)?(?:\s+\d+(?::\d+)+)?$'), handle_compattatore_mention))
+    app.add_handler(MessageHandler(filters.Regex(r'^/nocompattatore(?:@InventoryBot)?$'), toggle_compattatore))
     
     # Registrazione dei comandi utility
     app.add_handler(CommandHandler("start", start_command))

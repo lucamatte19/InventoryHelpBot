@@ -47,15 +47,23 @@ async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for cmd, count in stats["total"].items():
         if cmd != "unique_users":
             emoji = TIMER_DATA[cmd]["emoji"] if cmd in TIMER_DATA else "📈"
-            reply_text += f"{emoji} {cmd.capitalize()}: {count}\n"
+            # Escape eventuali caratteri speciali nel nome del comando
+            safe_cmd = cmd.replace("*", "\\*").replace("_", "\\_").replace("`", "\\`").replace("[", "\\[")
+            reply_text += f"{emoji} {safe_cmd.capitalize()}: {count}\n"
     
     # Stato impostazioni
     reply_text += "\n*Impostazioni Admin:*\n"
     status = "✅ Attivo" if should_send_admin_stats() else "❌ Disattivato"
     reply_text += f"📧 Ricezione stats giornaliere: {status}\n"
-    reply_text += "Usa /toggle_stats per cambiare questa impostazione"
+    reply_text += "Usa /toggle\\_stats per cambiare questa impostazione"
     
-    await update.message.reply_text(reply_text, parse_mode="Markdown")
+    try:
+        await update.message.reply_text(reply_text, parse_mode="Markdown")
+    except telegram.error.BadRequest as e:
+        # In caso di errore, prova a inviare senza formattazione
+        print(f"Errore nell'invio del messaggio formattato: {e}")
+        plain_text = reply_text.replace('*', '').replace('_', '')
+        await update.message.reply_text(f"⚠️ Errore di formattazione\n\n{plain_text}")
 
 async def toggle_admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Attiva/disattiva le notifiche statistiche giornaliere per l'admin."""

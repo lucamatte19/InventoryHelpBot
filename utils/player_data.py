@@ -20,7 +20,8 @@ DEFAULT_PLAYER_DATA = {
             "gica": True,
             "pozzo": True,
             "sonda": True,
-            "forno": True
+            "forno": True,
+            "compattatore": True  # Aggiunto compattatore
         },
         "startup_notifications": False,  # Cambiato da True a False
         "daily_stats": False
@@ -34,7 +35,8 @@ DEFAULT_PLAYER_DATA = {
         "gica": {"today": 0, "total": 0},
         "pozzo": {"today": 0, "total": 0},
         "sonda": {"today": 0, "total": 0},
-        "forno": {"today": 0, "total": 0}
+        "forno": {"today": 0, "total": 0},
+        "compattatore": {"today": 0, "total": 0}  # Aggiunto compattatore
     },
     "last_timers": {
         "avventura": 0,
@@ -45,7 +47,8 @@ DEFAULT_PLAYER_DATA = {
         "gica": 0,
         "pozzo": 0,
         "sonda": 0,
-        "forno": 0
+        "forno": 0,
+        "compattatore": 0  # Aggiunto compattatore
     },
     "username": "",
     "register_date": 0,
@@ -378,3 +381,83 @@ async def migrate_existing_data(registered_users, disabled_commands, user_stats,
     except Exception as e:
         print(f"Errore durante la migrazione dei dati: {e}")
         return False
+
+def ensure_complete_data_structure(data):
+    """Assicura che i dati utente abbiano tutte le sezioni necessarie."""
+    if "settings" not in data:
+        data["settings"] = {}
+    
+    if "notifications" not in data["settings"]:
+        data["settings"]["notifications"] = {}
+    
+    # Assicurati che ci siano tutti i comandi incluso compattatore
+    for cmd in ["avventura", "slot", "borsellino", "nanoc", "nanor", 
+               "gica", "pozzo", "sonda", "forno", "compattatore"]:
+        if cmd not in data["settings"]["notifications"]:
+            data["settings"]["notifications"][cmd] = True
+    
+    if "stats" not in data:
+        data["stats"] = {}
+    
+    # Assicurati che ci siano tutte le statistiche
+    for cmd in ["avventura", "slot", "borsellino", "nanoc", "nanor", 
+               "gica", "pozzo", "sonda", "forno", "compattatore"]:
+        if cmd not in data["stats"]:
+            data["stats"][cmd] = {"today": 0, "total": 0}
+    
+    if "last_timers" not in data:
+        data["last_timers"] = {}
+    
+    # Assicurati che ci siano tutti i timer
+    for cmd in ["avventura", "slot", "borsellino", "nanoc", "nanor", 
+               "gica", "pozzo", "sonda", "forno", "compattatore"]:
+        if cmd not in data["last_timers"]:
+            data["last_timers"][cmd] = 0
+
+def create_default_player_data():
+    """Crea una struttura dati di default per un nuovo utente."""
+    return {
+        "settings": {
+            "notifications": {
+                "avventura": True,
+                "slot": True,
+                "borsellino": True,
+                "nanoc": True,
+                "nanor": True,
+                "gica": True,
+                "pozzo": True,
+                "sonda": True,
+                "forno": True,
+                "compattatore": True  # Aggiunto compattatore
+            },
+            "daily_stats": False,
+            "startup_notifications": True
+        },
+        "stats": {
+            "avventura": {"today": 0, "total": 0},
+            "slot": {"today": 0, "total": 0},
+            "borsellino": {"today": 0, "total": 0},
+            "nanoc": {"today": 0, "total": 0},
+            "nanor": {"today": 0, "total": 0},
+            "gica": {"today": 0, "total": 0},
+            "pozzo": {"today": 0, "total": 0},
+            "sonda": {"today": 0, "total": 0},
+            "forno": {"today": 0, "total": 0},
+            "compattatore": {"today": 0, "total": 0}  # Aggiunto compattatore
+        },
+        "last_timers": {
+            "avventura": 0,
+            "slot": 0,
+            "borsellino": 0,
+            "nanoc": 0,
+            "nanor": 0,
+            "gica": 0,
+            "pozzo": 0,
+            "sonda": 0,
+            "forno": 0,
+            "compattatore": 0  # Aggiunto compattatore
+        },
+        "username": "",
+        "register_date": int(time.time()),
+        "last_active": int(time.time())
+    }

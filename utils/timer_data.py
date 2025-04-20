@@ -24,6 +24,7 @@ try:
         "pozzo": config.getint('timers', 'pozzo', fallback=24) * 3600,
         "sonda": config.getint('timers', 'sonda', fallback=168) * 3600,
         "forno": config.getint('timers', 'forno', fallback=168) * 3600,
+        "compattatore": config.getint('timers', 'compattatore', fallback=24) * 3600,  # Nuovo timer per compattatore
     }
 except (configparser.NoSectionError, configparser.NoOptionError, ValueError) as e:
     print(f"Warning: Error reading cooldowns from config.ini ({e}). Using defaults.")
@@ -31,6 +32,7 @@ except (configparser.NoSectionError, configparser.NoOptionError, ValueError) as 
         "avventura": 15 * 60, "slot": 5 * 60, "borsellino": 30 * 60,
         "nanoc": 24 * 3600, "nanor": 24 * 3600, "gica": 24 * 3600,
         "pozzo": 24 * 3600, "sonda": 7 * 24 * 3600, "forno": 7 * 24 * 3600,
+        "compattatore": 24 * 3600,  # Compattatore: 24 ore
     }
 
 # --- Emojis ---
@@ -38,6 +40,7 @@ EMOJIS = {
     "avventura": "🗡", "slot": "🎰", "borsellino": "💰",
     "nanoc": "🧪", "nanor": "🔄", "gica": "🧙‍♂️",
     "pozzo": "🚰", "sonda": "🔍", "forno": "🔥",
+    "compattatore": "🗜️",  # Emoji per compattatore
 }
 
 # Statistiche giornaliere
@@ -51,6 +54,7 @@ daily_stats = {
     "pozzo": 0,
     "sonda": 0,
     "forno": 0,
+    "compattatore": 0,  # Aggiunto contatore per compattatore
     "unique_users": set()  # Set per utenti unici
 }
 
@@ -73,6 +77,7 @@ gica_times = {}
 pozzo_times = {}
 sonda_times = {}
 forno_times = {}
+compattatore_times = {}  # Struttura: {user_id: timestamp}
 
 # Set per memorizzare quali utenti hanno disattivato le notifiche
 disabled_avventura = set()
@@ -84,6 +89,7 @@ disabled_gica = set()
 disabled_pozzo = set()
 disabled_sonda = set()
 disabled_forno = set()
+disabled_compattatore = set()
 
 # Dizionari per tenere traccia dei task attivi per ogni comando
 active_avventura_tasks = {}  # {user_id: task}
@@ -95,6 +101,7 @@ active_gica_tasks = {}
 active_pozzo_tasks = {}
 active_sonda_tasks = {}
 active_forno_tasks = {}
+active_compattatore_tasks = {}
 
 # Set per memorizzare gli utenti che hanno avviato il bot
 registered_users = set()
@@ -148,4 +155,5 @@ TIMER_DATA = {
     "pozzo": {"times": pozzo_times, "disabled": disabled_pozzo, "active": active_pozzo_tasks, "cooldown": COOLDOWNS["pozzo"], "emoji": EMOJIS["pozzo"]},
     "sonda": {"times": sonda_times, "disabled": disabled_sonda, "active": active_sonda_tasks, "cooldown": COOLDOWNS["sonda"], "emoji": EMOJIS["sonda"]},
     "forno": {"times": forno_times, "disabled": disabled_forno, "active": active_forno_tasks, "cooldown": COOLDOWNS["forno"], "emoji": EMOJIS["forno"]},
+    "compattatore": {"times": compattatore_times, "disabled": disabled_compattatore, "active": active_compattatore_tasks, "cooldown": COOLDOWNS["compattatore"], "emoji": EMOJIS["compattatore"]},
 }

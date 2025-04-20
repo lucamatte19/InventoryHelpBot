@@ -25,6 +25,8 @@ async def handle_borsellino_mention(update: Update, context: ContextTypes.DEFAUL
     if not match:
         print("[Borsellino] Regex did not match.")
         return
+    
+    print(f"[Borsellino] Matched with pattern: {regex_pattern}")
 
     time_str = match.group(1)
     user = update.effective_user
