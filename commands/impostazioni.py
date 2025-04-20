@@ -6,7 +6,8 @@ from telegram.ext import ContextTypes, CallbackQueryHandler
 from utils.player_data import (
     load_player_data, update_player_notification_setting, 
     update_daily_stats_subscription, update_startup_notification_setting,
-    get_startup_notification_status
+    get_startup_notification_status, update_preferred_notification_chat,
+    get_preferred_notification_chat
 )
 from utils.timer_data import (
     TIMER_DATA, disabled_avventura, disabled_slot, disabled_borsellino,
@@ -15,7 +16,7 @@ from utils.timer_data import (
 )
 
 async def impostazioni_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Gestione delle impostazioni utente."""
+    """Gestione delle impostazioni utente con interfaccia migliorata."""
     user = update.effective_user
     user_id = user.id
     
@@ -24,54 +25,74 @@ async def impostazioni_command(update: Update, context: ContextTypes.DEFAULT_TYP
     settings = data.get("settings", {})
     notifications = settings.get("notifications", {})
     
-    # Crea la tastiera inline
+    # Crea la tastiera inline con una struttura più compatta
     keyboard = []
-
-    # Pulsanti per i comandi
-    commands = [
-        ("Avventura", "avventura"),
-        ("Slot", "slot"), 
-        ("Borsellino", "borsellino"),
-        ("Nanoc", "nanoc"), 
-        ("Nanor", "nanor"),
-        ("Gica", "gica"), 
-        ("Pozzo", "pozzo"),
-        ("Sonda", "sonda"), 
-        ("Forno", "forno"),
-        ("Compattatore", "compattatore")
-    ]
-
-    # Aggiungi i pulsanti per le notifiche dei comandi
-    for cmd_name, cmd_id in commands:
-        status = notifications.get(cmd_id, True)  # Default a True se non impostato
-        btn_text = f"{'🔔' if status else '🔕'} {cmd_name}"
-        keyboard.append([InlineKeyboardButton(btn_text, callback_data=f"toggle_{cmd_id}")])
-
-    # Pulsanti per le altre impostazioni
+    
+    # Riga 1: Timer principali
+    row1 = []
+    for command, display in [("avventura", "Avventura"), ("slot", "Slot"), ("borsellino", "Borsa")]:
+        enabled = notifications.get(command, True)
+        emoji = "✅" if enabled else "❌"
+        row1.append(InlineKeyboardButton(f"{emoji} {display}", callback_data=f"toggle_{command}"))
+    keyboard.append(row1)
+    
+    # Riga 2: Timer giornalieri - parte 1
+    row2 = []
+    for command, display in [("nanoc", "Nanoc"), ("nanor", "Nanor"), ("gica", "Gica")]:
+        enabled = notifications.get(command, True)
+        emoji = "✅" if enabled else "❌"
+        row2.append(InlineKeyboardButton(f"{emoji} {display}", callback_data=f"toggle_{command}"))
+    keyboard.append(row2)
+    
+    # Riga 3: Timer giornalieri - parte 2
+    row3 = []
+    for command, display in [("pozzo", "Pozzo"), ("compattatore", "Compatt.")]:
+        enabled = notifications.get(command, True)
+        emoji = "✅" if enabled else "❌"
+        row3.append(InlineKeyboardButton(f"{emoji} {display}", callback_data=f"toggle_{command}"))
+    keyboard.append(row3)
+    
+    # Riga 4: Timer settimanali
+    row4 = []
+    for command, display in [("sonda", "Sonda"), ("forno", "Forno")]:
+        enabled = notifications.get(command, True)
+        emoji = "✅" if enabled else "❌"
+        row4.append(InlineKeyboardButton(f"{emoji} {display}", callback_data=f"toggle_{command}"))
+    keyboard.append(row4)
+    
+    # Riga 5: Altre impostazioni
     daily_stats = settings.get("daily_stats", False)
-    startup_notifications = settings.get("startup_notifications", True)
+    keyboard.append([
+        InlineKeyboardButton(
+            f"{'✅' if daily_stats else '❌'} Stats Giornaliere", 
+            callback_data="toggle_daily_stats"
+        )
+    ])
     
-    keyboard.append([InlineKeyboardButton(
-        f"{'✅' if daily_stats else '❌'} Statistiche giornaliere", 
-        callback_data="toggle_daily_stats"
-    )])
+    # Riga 6: Impostazioni per il gruppo di notifiche
+    preferred_chat = get_preferred_notification_chat(user_id)
+    is_current_chat = preferred_chat == update.effective_chat.id if preferred_chat else False
     
-    keyboard.append([InlineKeyboardButton(
-        f"{'✅' if startup_notifications else '❌'} Notifiche di avvio", 
-        callback_data="toggle_startup"
-    )])
+    keyboard.append([
+        InlineKeyboardButton(
+            f"{'✅' if is_current_chat else '❌'} Notifiche qui", 
+            callback_data="set_notification_chat"
+        )
+    ])
     
-    # Pulsante per chiudere
-    keyboard.append([InlineKeyboardButton("❌ Chiudi", callback_data="close_settings")])
+    # Pulsante di chiusura
+    keyboard.append([InlineKeyboardButton("✅ Chiudi", callback_data="close_settings")])
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await update.message.reply_text(
-        "⚙️ *Impostazioni Personali* ⚙️\n\n"
-        "Qui puoi gestire le tue preferenze personali. Tocca un pulsante per attivare/disattivare l'opzione.",
-        reply_markup=reply_markup,
-        parse_mode='Markdown'
+    # Messaggio con intestazione più compatta
+    message = (
+        "⚙️ *Impostazioni* ⚙️\n\n"
+        "Tocca un pulsante per attivare/disattivare l'opzione.\n"
+        "Le modifiche hanno effetto immediato."
     )
+    
+    await update.message.reply_text(message, reply_markup=reply_markup, parse_mode='Markdown')
 
 async def impostazioni_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Gestisce le callback dei pulsanti delle impostazioni."""
@@ -105,16 +126,6 @@ async def impostazioni_callback(update: Update, context: ContextTypes.DEFAULT_TY
             # Fornisci un feedback specifico
             status = "attivate" if not current_setting else "disattivate"
             await query.answer(f"Statistiche giornaliere {status}", show_alert=False)
-            
-        elif callback_data == "toggle_startup_notify":
-            current_setting = get_startup_notification_status(user_id)
-            
-            # Aggiorna l'impostazione
-            update_startup_notification_setting(user_id, not current_setting)
-            
-            # Fornisci un feedback specifico
-            status = "attivate" if not current_setting else "disattivate"
-            await query.answer(f"Notifiche di avvio {status}", show_alert=False)
     except Exception as e:
         print(f"Errore durante l'elaborazione della callback: {e}")
         await query.answer("Si è verificato un errore", show_alert=True)
@@ -126,7 +137,6 @@ async def impostazioni_callback(update: Update, context: ContextTypes.DEFAULT_TY
         player_data = load_player_data(user_id)
         notification_settings = player_data["settings"]["notifications"]
         daily_stats_enabled = player_data["settings"].get("daily_stats", False)
-        startup_notify_enabled = player_data["settings"].get("startup_notifications", True)
         
         # Prepara il messaggio con le impostazioni attuali
         response_lines = [f"⚙️ *Impostazioni di @{username}* ⚙️\n"]
@@ -143,11 +153,6 @@ async def impostazioni_callback(update: Update, context: ContextTypes.DEFAULT_TY
         response_lines.append("\n📊 *Statistiche Giornaliere:*")
         stats_status = "✅ Attive" if daily_stats_enabled else "❌ Disattivate"
         response_lines.append(f"Notifiche statistiche giornaliere: {stats_status}")
-        
-        # Notifiche di avvio
-        response_lines.append("\n🚀 *Notifiche di Sistema:*")
-        startup_status = "✅ Attive" if startup_notify_enabled else "❌ Disattivate"
-        response_lines.append(f"Notifiche all'avvio del bot: {startup_status}")
         
         # Info registrazione
         register_date = datetime.datetime.fromtimestamp(player_data["register_date"])
@@ -199,15 +204,11 @@ async def impostazioni_callback(update: Update, context: ContextTypes.DEFAULT_TY
                 ))
         keyboard.append(row3)
         
-        # Riga 4: Toggle statistiche giornaliere e notifiche di avvio
+        # Riga 4: Toggle statistiche giornaliere
         row4 = [
             InlineKeyboardButton(
                 f"{'✅' if daily_stats_enabled else '❌'} Stats Giornaliere", 
                 callback_data="toggle_daily_stats"
-            ),
-            InlineKeyboardButton(
-                f"{'✅' if startup_notify_enabled else '❌'} Notifiche Avvio", 
-                callback_data="toggle_startup_notify"
             )
         ]
         keyboard.append(row4)
@@ -225,15 +226,31 @@ async def impostazioni_callback(update: Update, context: ContextTypes.DEFAULT_TY
         await query.answer("Errore nell'aggiornamento della vista", show_alert=True)
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Gestisce i callback dei pulsanti inline."""
+    """Gestisce i callback dei pulsanti inline con feedback immediato."""
     query = update.callback_query
-    await query.answer()
-    
     user_id = query.from_user.id
     callback_data = query.data
     
+    # Fornisci un feedback immediato
+    await query.answer()
+    
     if callback_data == "close_settings":
-        await query.edit_message_text("⚙️ Impostazioni chiuse.")
+        await query.edit_message_text("⚙️ Impostazioni salvate!")
+        return
+    
+    elif callback_data == "set_notification_chat":
+        chat_id = update.effective_chat.id
+        chat_type = update.effective_chat.type
+        chat_title = update.effective_chat.title if chat_type != "private" else "Chat privata"
+        
+        # Aggiorna le impostazioni
+        update_preferred_notification_chat(user_id, chat_id)
+        
+        # Feedback immediato
+        await query.answer(f"Notifiche impostate in: {chat_title}", show_alert=True)
+        
+        # Aggiorna il messaggio per mostrare lo stato aggiornato
+        await update_settings_message(query, user_id)
         return
     
     # Carica i dati utente
@@ -245,20 +262,119 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if option in TIMER_DATA:
             # Toggle per le notifiche di comando
             current = data.get("settings", {}).get("notifications", {}).get(option, True)
-            data.setdefault("settings", {}).setdefault("notifications", {})[option] = not current
+            new_value = not current
+            
+            # Aggiorna le impostazioni
+            update_player_notification_setting(user_id, option, new_value)
             
             # Applica anche al sistema in memoria (compatibilità)
             disabled_set = TIMER_DATA[option]["disabled"]
             
-            if not current:  # Se era disattivato, ora è attivato
+            if new_value:  # Se ora è attivato
                 if user_id in disabled_set:
                     disabled_set.remove(user_id)
-            else:  # Se era attivato, ora è disattivato
+            else:  # Se ora è disattivato
                 disabled_set.add(user_id)
+                
+            # Feedback immediato
+            status = "attivate" if new_value else "disattivate"
+            await query.answer(f"Notifiche {option} {status}")
+            
+        elif option == "daily_stats":
+            # Toggle per le statistiche giornaliere
+            current = data.get("settings", {}).get("daily_stats", False)
+            new_value = not current
+            
+            # Aggiorna le impostazioni
+            update_daily_stats_subscription(user_id, new_value)
+            
+            # Feedback immediato
+            status = "attivate" if new_value else "disattivate"
+            await query.answer(f"Statistiche giornaliere {status}")
+    
+    # Aggiorna il messaggio per mostrare lo stato aggiornato
+    await update_settings_message(query, user_id)
+
+async def update_settings_message(query, user_id):
+    """Aggiorna il messaggio delle impostazioni con lo stato corrente."""
+    # Carica i dati dell'utente
+    data = load_player_data(user_id)
+    settings = data.get("settings", {})
+    notifications = settings.get("notifications", {})
+    
+    # Ricrea la tastiera inline con lo stato aggiornato
+    keyboard = []
+    
+    # Riga 1: Timer principali
+    row1 = []
+    for command, display in [("avventura", "Avventura"), ("slot", "Slot"), ("borsellino", "Borsa")]:
+        enabled = notifications.get(command, True)
+        emoji = "✅" if enabled else "❌"
+        row1.append(InlineKeyboardButton(f"{emoji} {display}", callback_data=f"toggle_{command}"))
+    keyboard.append(row1)
+    
+    # Riga 2: Timer giornalieri - parte 1
+    row2 = []
+    for command, display in [("nanoc", "Nanoc"), ("nanor", "Nanor"), ("gica", "Gica")]:
+        enabled = notifications.get(command, True)
+        emoji = "✅" if enabled else "❌"
+        row2.append(InlineKeyboardButton(f"{emoji} {display}", callback_data=f"toggle_{command}"))
+    keyboard.append(row2)
+    
+    # Riga 3: Timer giornalieri - parte 2
+    row3 = []
+    for command, display in [("pozzo", "Pozzo"), ("compattatore", "Compatt.")]:
+        enabled = notifications.get(command, True)
+        emoji = "✅" if enabled else "❌"
+        row3.append(InlineKeyboardButton(f"{emoji} {display}", callback_data=f"toggle_{command}"))
+    keyboard.append(row3)
+    
+    # Riga 4: Timer settimanali
+    row4 = []
+    for command, display in [("sonda", "Sonda"), ("forno", "Forno")]:
+        enabled = notifications.get(command, True)
+        emoji = "✅" if enabled else "❌"
+        row4.append(InlineKeyboardButton(f"{emoji} {display}", callback_data=f"toggle_{command}"))
+    keyboard.append(row4)
+    
+    # Riga 5: Altre impostazioni
+    daily_stats = settings.get("daily_stats", False)
+    keyboard.append([
+        InlineKeyboardButton(
+            f"{'✅' if daily_stats else '❌'} Stats Giornaliere", 
+            callback_data="toggle_daily_stats"
+        )
+    ])
+    
+    # Riga 6: Impostazioni per il gruppo di notifiche
+    preferred_chat = get_preferred_notification_chat(user_id)
+    is_current_chat = preferred_chat == query.message.chat.id if preferred_chat else False
+    
+    keyboard.append([
+        InlineKeyboardButton(
+            f"{'✅' if is_current_chat else '❌'} Notifiche qui", 
+            callback_data="set_notification_chat"
+        )
+    ])
+    
+    # Pulsante di chiusura
+    keyboard.append([InlineKeyboardButton("✅ Chiudi", callback_data="close_settings")])
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    # Messaggio con intestazione più compatta
+    message = (
+        "⚙️ *Impostazioni* ⚙️\n\n"
+        "Tocca un pulsante per attivare/disattivare l'opzione.\n"
+        "Le modifiche hanno effetto immediato."
+    )
+    
+    # Aggiorna il messaggio
+    await query.edit_message_text(message, reply_markup=reply_markup, parse_mode='Markdown')
 
 def register_impostazioni_handlers(app):
     """Registra gli handler per il comando impostazioni."""
     from telegram.ext import CommandHandler
     
     app.add_handler(CommandHandler("impostazioni", impostazioni_command))
-    app.add_handler(CallbackQueryHandler(button_handler, pattern=r'^toggle_'))
+    app.add_handler(CallbackQueryHandler(button_handler, pattern=r'^(toggle_|set_notification_chat|close_settings)'))

@@ -6,7 +6,7 @@ from telegram.ext import ContextTypes
 from utils.formatters import format_remaining_time, parse_dhms_time
 from utils.helpers import cancel_active_task
 from utils.messaging import send_notification
-from utils.player_data import update_player_stats, update_last_timer, get_notification_status, update_player_notification_setting
+from utils.player_data import update_player_stats, update_last_timer, get_notification_status, update_player_notification_setting, get_preferred_notification_chat
 from utils.timer_data import daily_stats, user_stats, TIMER_DATA
 from utils.logger import logger
 

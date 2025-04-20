@@ -412,6 +412,10 @@ def ensure_complete_data_structure(data):
         if cmd not in data["settings"]["notifications"]:
             data["settings"]["notifications"][cmd] = True
     
+    # Aggiungi preferred_notification_chat se non esiste
+    if "preferred_notification_chat" not in data["settings"]:
+        data["settings"]["preferred_notification_chat"] = None
+    
     if "stats" not in data:
         data["stats"] = {}
     
@@ -477,3 +481,15 @@ def create_default_player_data():
         "register_date": int(time.time()),
         "last_active": int(time.time())
     }
+
+def update_preferred_notification_chat(user_id, chat_id):
+    """Aggiorna il gruppo/chat preferito per ricevere notifiche"""
+    data = load_player_data(user_id)
+    data.setdefault("settings", {})["preferred_notification_chat"] = chat_id
+    data["last_active"] = int(time.time())
+    return save_player_data(user_id)
+
+def get_preferred_notification_chat(user_id):
+    """Ottiene il gruppo/chat preferito per ricevere notifiche"""
+    data = load_player_data(user_id)
+    return data.get("settings", {}).get("preferred_notification_chat", user_id)

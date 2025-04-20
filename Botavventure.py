@@ -159,47 +159,12 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.message.reply_text(welcome_message, parse_mode="HTML")
 
-# Notifica all'avvio del bot
+# Notifica all'avvio del bot - RIMOSSA/DISABILITATA
 async def send_startup_notifications(app: Application):
-    """Sends a notification to registered chats upon bot startup."""
-    startup_message = (
-        "🔄 *Bot appena avviato!* 🔄\n\n"
-        "Sono tornato online e pronto ad aiutarti.\n"
-        "Da ora tutti i timer rimangono correttamente (si spera) salvati senza bisogno che tu modifichi nulla.\n"
-        "Usa /timer per controllare i tuoi timer attuali.\n"
-        "Usa /impostazioni per personalizzare le tue preferenze.(probabilmente ti conviene disattivare questo messaggio)\n"
-        "Se hai idee per comandi da aggiungere o miglioramenti, contatta @LucaQuelloFigo.\n\n"
-    )
-    
-    # Importa la funzione per verificare le preferenze dell'utente
-    from utils.player_data import get_startup_notification_status
-    
-    # Invia la notifica a tutti gli utenti registrati che hanno attivato le notifiche di avvio
-    bot = app.bot
-    sent_count = 0
-    skipped_count = 0
-    error_count = 0
-    
-    print(f"Preparazione notifica di avvio per {len(registered_users)} utenti...")
-    
-    for user_id in registered_users:
-        try:
-            # Controlla se l'utente vuole ricevere notifiche di avvio
-            if get_startup_notification_status(user_id):
-                await bot.send_message(
-                    chat_id=user_id,
-                    text=startup_message,
-                    parse_mode="Markdown"
-                )
-                sent_count += 1
-            else:
-                skipped_count += 1
-                print(f"Notifica saltata per utente {user_id} (preferenza disattivata)")
-        except Exception as e:
-            print(f"Errore nell'invio della notifica di avvio all'utente {user_id}: {e}")
-            error_count += 1
-    
-    print(f"Notifiche di avvio: {sent_count} inviate, {skipped_count} saltate, {error_count} errori")
+    """Funzione disabilitata: non invia più le notifiche di avvio"""
+    # Questa funzione è stata disabilitata come richiesto
+    print("Notifiche di avvio disabilitate")
+    return
 
 async def post_init(app: Application):
     """Runs after the application has been initialized."""
@@ -225,8 +190,8 @@ async def post_init(app: Application):
         import traceback
         traceback.print_exc()
     
-    # Invio notifiche di avvio
-    await send_startup_notifications(app)
+    # Funzione disabilitata come richiesto
+    # await send_startup_notifications(app)
 
 # Comando info
 async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -283,7 +248,9 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 `/noutilizzi` - Disattiva notifiche giornaliere statistiche
 
 ⚙️ *Preferenze*
-`/impostazioni` - Gestisci le tue impostazioni
+`/impostazioni` - Gestisci le tue impostazioni e scegli dove ricevere le notifiche
+   • Puoi selezionare il gruppo in cui ricevere le notifiche
+   • Usa il pulsante "Notifiche qui" nel menu Impostazioni
 
 🔍 *Utilità*
 `/start` - Avvia il bot e registrati per le notifiche
